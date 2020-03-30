@@ -1,0 +1,15 @@
+{
+    "editor.formatOnSave": true,
+    "editor.fontFamily": "Fira Code",
+    "editor.fontLigatures": true,
+    "workbench.editor.highlightModifiedTabs": true,
+    "explorer.sortOrder": "type",
+    "editor.cursorBlinking": "smooth",
+    "files.trimFinalNewlines": true,
+    "terminal.integrated.scrollback": 5000,
+    "workbench.colorCustomizations": {
+        "tab.activeBackground": "#020205",
+        "tab.activeBorder": "#ff0000"
+    },
+    "problems.showCurrentInStatus": true,
+}

@@ -1,0 +1,38 @@
+{
+  "name": "token-replacement-action",
+  "version": "1.0.0",
+  "description": "A simple utility action to replace tokens in files",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "package": "ncc build src/index.ts -o dist",
+    "test": "jest --runInBand",
+    "test-watch": "jest --watch --runInBand"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/onlyutkarsh/token-replacement-action.git"
+  },
+  "keywords": [],
+  "author": "onlyutkarsh",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/onlyutkarsh/token-replacement-action/issues"
+  },
+  "homepage": "https://github.com/onlyutkarsh/token-replacement-action#readme",
+  "dependencies": {
+    "@actions/core": "~1.2.3",
+    "@actions/github": "~2.1.1"
+  },
+  "devDependencies": {
+    "@types/jest": "~25.1.4",
+    "@types/node": "~13.9.5",
+    "@zeit/ncc": "~0.22.0",
+    "jest": "~25.2.4",
+    "jest-circus": "~25.2.4",
+    "ts-jest": "~25.3.0",
+    "tslint": "~6.1.0",
+    "typescript": "~3.8.3"
+  }
+}
