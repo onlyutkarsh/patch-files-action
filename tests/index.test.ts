@@ -31,14 +31,6 @@ describe("basic functionality", () => {
 
     });
 
-    test("replace token using environment variable", async () => {
-        process.env["MY_VERSION"] = "1.0.1";
-        let files = ["temp/*.json"];
-        let patchSyntax = "= /version => \"${{ MY_VERSION }}\"";
-        let result = pf.expandVariable(patchSyntax);
-        expect(result).toEqual("= /version => \"1.0.1\"");
-    });
-
     test("replace multiple tokens in file", async () => {
     });
 

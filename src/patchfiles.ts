@@ -1,16 +1,8 @@
 import * as glob from "@actions/glob";
 
 export async function patchFiles(files: string[], patchSyntax: string): Promise<boolean> {
-    const parsedContent = expandVariable(patchSyntax);
-    console.log(parsedContent);
-    return true;
-}
 
-export function expandVariable(str: string): string {
-    let varRegex = /\$\{{(.*?)\}}/g;
-    return str.replace(varRegex, (match, varName, offset, string) => {
-        return process.env[varName.trim()] || "";
-    });
+    return true;
 }
 
 export async function globFiles(patterns: string, followSymbolicLinks: string = "true"): Promise<glob.Globber> {
