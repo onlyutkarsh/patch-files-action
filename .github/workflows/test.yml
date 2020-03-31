@@ -23,6 +23,3 @@ jobs:
           = /version => 1.0.1
           + /author => "utkarsh"
           = /bugs/url => "https://www.google.com"
-
-      with: 
-        milliseconds: 1000
