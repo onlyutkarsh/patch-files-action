@@ -21,8 +21,8 @@ describe("basic functionality", () => {
     test("find matching files in a directory should return one file", async () => {
         let pattern = ["temp\\*.json"];
         let files = pattern.join("\n");
-        let glob = await pf.globFiles(files);
-        let paths = await glob.glob();
+        let globber = await pf.globFiles(files);
+        let paths = await globber.glob();
         expect(paths.length).toEqual(1);
     });
 
