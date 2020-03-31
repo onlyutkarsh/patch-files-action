@@ -7,7 +7,7 @@
     "build": "tsc",
     "watch": "tsc --watch",
     "package": "ncc build src/index.ts -o dist",
-    "test": "jest --runInBand",
+    "test": "jest --runInBand --silent",
     "test-watch": "jest --watch --runInBand"
   },
   "repository": {
@@ -21,9 +21,13 @@
     "url": "https://github.com/onlyutkarsh/token-replacement-action/issues"
   },
   "homepage": "https://github.com/onlyutkarsh/token-replacement-action#readme",
+  "jest": {
+    "testEnvironment": "node"
+  },
   "dependencies": {
     "@actions/core": "~1.2.3",
-    "@actions/github": "~2.1.1"
+    "@actions/github": "~2.1.1",
+    "fast-glob": "~3.2.2"
   },
   "devDependencies": {
     "@types/jest": "~25.1.4",

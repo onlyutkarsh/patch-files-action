@@ -12,5 +12,6 @@
         "tab.activeBorder": "#ff0000"
     },
     "problems.showCurrentInStatus": true,
-    "git.enableCommitSigning": true
+    "git.enableCommitSigning": true,
+    "editor.wordWrap": "on",
 }

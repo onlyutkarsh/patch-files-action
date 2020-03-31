@@ -1,8 +1,27 @@
 import * as core from "@actions/core";
-import * as github from "@actions/github";
+import { patchFiles, findFilesInDir } from "./patchfiles";
 
-try {
-    console.log("hello");
-} catch (error) {
-    core.setFailed(error.message);
+function getInputFiles(): string[] {
+    const files = core.getInput("files", {
+        required: true
+    }) || "";
+
+    if (files.trim().startsWith("[")) {
+        return JSON.parse(files);
+    }
+
+    return [files];
 }
+
+async function run() {
+    try {
+        let files = getInputFiles();
+        files = Array.isArray(files) ? files : [files];
+        let paths = await findFilesInDir(["./temp/*.json"]);
+        let result = patchFiles(files, "");
+    } catch (error) {
+        core.setFailed(error.message);
+    }
+}
+
+run();
