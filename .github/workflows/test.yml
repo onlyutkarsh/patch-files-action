@@ -20,7 +20,9 @@ jobs:
       env:
         name: utkarsh
       with:
-        files: '["**/*.json"]'
+        files: |
+          **/*.json
+          **/*.js
         patchsyntax: |
           = /version => "${{ github.run_number }}"
           + /author => "$name"

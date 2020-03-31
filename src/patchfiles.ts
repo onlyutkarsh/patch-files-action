@@ -13,7 +13,7 @@ export function expandVariable(str: string): string {
     });
 }
 
-export async function globFiles(patterns: string, followSymbolicLinks: string = "false"): Promise<glob.Globber> {
+export async function globFiles(patterns: string, followSymbolicLinks: string = "true"): Promise<glob.Globber> {
     const globOptions = {
         followSymbolicLinks: followSymbolicLinks.toUpperCase() !== "FALSE"
     };
