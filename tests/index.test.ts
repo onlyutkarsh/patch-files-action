@@ -5,8 +5,6 @@ import * as pf from "../src/patchfiles";
 
 describe("basic functionality", () => {
     beforeEach(async () => {
-        await fs.rmdir("./temp", { recursive: true });
-
         await fs.writeFile("test.txt", "hello #{MY_TOKEN}#", "utf8");
         await fs.writeFile("test2.txt", "#{GREETING}# #{ACTOR}#", "utf8");
 

@@ -7,7 +7,7 @@
     "build": "tsc",
     "watch": "tsc --watch",
     "package": "ncc build src/index.ts -o dist",
-    "test": "jest --runInBand --silent",
+    "test": "jest --runInBand",
     "test-watch": "jest --watch --runInBand"
   },
   "repository": {
