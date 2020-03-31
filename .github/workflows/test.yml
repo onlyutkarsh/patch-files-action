@@ -17,5 +17,12 @@ jobs:
     - run: npm test
     - run: npm run package
     - uses: ./
+      with:
+        files: '["./testfiles/*.json"]'
+        patchsyntax: |
+          = /version => 1.0.1
+          + /author => "utkarsh"
+          = /bugs/url => "https://www.google.com"
+
       with: 
         milliseconds: 1000
