@@ -1,13 +1,25 @@
-import fg from "fast-glob";
+import * as glob from "@actions/glob";
 
 export async function patchFiles(files: string[], patchSyntax: string): Promise<boolean> {
+    const parsedContent = expandVariable(patchSyntax);
+    console.log(parsedContent);
     return true;
 }
 
-export async function findFilesInDir(files: string[]): Promise<string[]> {
+export function expandVariable(str: string): string {
+    let varRegex = /\$\{{(.*?)\}}/g;
+    return str.replace(varRegex, (match, varName, offset, string) => {
+        return process.env[varName.trim()] || "";
+    });
+}
 
-    let paths = await fg(files, <fg.Options>{ dot: true, cwd: process.cwd() });
-    return paths;
+export async function globFiles(patterns: string, followSymbolicLinks: string = "false"): Promise<glob.Globber> {
+    const globOptions = {
+        followSymbolicLinks: followSymbolicLinks.toUpperCase() !== "FALSE"
+    };
+
+    let globber = await glob.create(patterns);
+    return globber;
 
 }
 

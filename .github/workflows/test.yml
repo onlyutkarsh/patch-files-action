@@ -17,9 +17,11 @@ jobs:
     - run: npm test
     - run: npm run package
     - uses: ./
+      env:
+        node_version: ${{ env.NODE_VERSION }}
       with:
-        files: '["./testfiles/*.json"]'
+        files: '["./**/*.json"]'
         patchsyntax: |
-          = /version => 1.0.1
+          = /version => "${{ node_version }}"
           + /author => "utkarsh"
           = /bugs/url => "https://www.google.com"

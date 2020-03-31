@@ -8,8 +8,7 @@
     "files.trimFinalNewlines": true,
     "terminal.integrated.scrollback": 5000,
     "workbench.colorCustomizations": {
-        "tab.activeBackground": "#020205",
-        "tab.activeBorder": "#ff0000"
+        "tab.activeBackground": "#020205"
     },
     "problems.showCurrentInStatus": true,
     "git.enableCommitSigning": true,

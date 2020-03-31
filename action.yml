@@ -8,7 +8,9 @@ inputs:
   files:
     description: 'Files to scan. Accepts glob pattern using micromatch'
     required: true
-  
+  follow-symbolic-links:
+    description: 'Indicates whether to follow symbolic links'
+    default: false
   patchsyntax:
     description: 'Use the quick patch syntax to patch files. Refer docs for more info'
     required: true

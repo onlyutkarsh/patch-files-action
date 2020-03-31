@@ -1,6 +1,6 @@
 import { promises as fs } from "fs";
 import * as process from "process";
-import { patchFiles, findFilesInDir } from "../src/patchfiles";
+import * as pf from "../src/patchfiles";
 
 
 describe("basic functionality", () => {
@@ -20,8 +20,10 @@ describe("basic functionality", () => {
     });
 
     test("find matching files in a directory should return one file", async () => {
-        let files = ["temp/*.json"];
-        let paths = await findFilesInDir(files);
+        let pattern = ["temp\\*.json"];
+        let files = pattern.join("\n");
+        let glob = await pf.globFiles(files);
+        let paths = await glob.glob();
         expect(paths.length).toEqual(1);
     });
 
@@ -33,16 +35,15 @@ describe("basic functionality", () => {
 
     });
 
-    test("replace single token in file", async () => {
+    test("replace token using environment variable", async () => {
+        process.env["MY_VERSION"] = "1.0.1";
         let files = ["temp/*.json"];
-        let patchSyntax = "= /version => \"1.0.1\"";
-        let result = await patchFiles(files, patchSyntax);
-        expect(result).toEqual(true);
-
+        let patchSyntax = "= /version => \"${{ MY_VERSION }}\"";
+        let result = pf.expandVariable(patchSyntax);
+        expect(result).toEqual("= /version => \"1.0.1\"");
     });
 
     test("replace multiple tokens in file", async () => {
-
     });
 
     test("remove single token in file", async () => {
@@ -52,5 +53,4 @@ describe("basic functionality", () => {
     test("remove multiple tokens in file", async () => {
 
     });
-
 });
