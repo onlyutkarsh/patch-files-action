@@ -18,7 +18,7 @@ export async function globFiles(patterns: string, followSymbolicLinks: string = 
         followSymbolicLinks: followSymbolicLinks.toUpperCase() !== "FALSE"
     };
 
-    let globber = await glob.create(patterns);
+    let globber = await glob.create(patterns, globOptions);
     return globber;
 
 }
