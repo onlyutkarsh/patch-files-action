@@ -21,8 +21,7 @@ jobs:
         name: utkarsh
       with:
         files: |
-          **/*.json
-          **/*.js
+          testfiles/**/*.json
         patchsyntax: |
           = /version => "${{ github.run_number }}"
           + /author => "$name"
