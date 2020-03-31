@@ -17,6 +17,7 @@ describe("basic functionality", () => {
     afterEach(async () => {
         await fs.unlink("test.txt");
         await fs.unlink("test2.txt");
+        await fs.rmdir("./temp", { recursive: true });
     });
 
     test("find matching files in a directory should return one file", async () => {
