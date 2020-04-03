@@ -5,10 +5,11 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "watch": "tsc --watch",
+    "watch": "tsc --watch && npm lint",
     "package": "ncc build src/index.ts -o dist",
     "test": "jest --runInBand",
-    "test-watch": "jest --watch --runInBand"
+    "test-watch": "jest --watch --runInBand",
+    "lint": "eslint -c .eslintrc.js --ext .ts ."
   },
   "repository": {
     "type": "git",
@@ -35,11 +36,14 @@
     "@types/jest": "~25.1.4",
     "@types/node": "~13.9.5",
     "@types/xregexp": "~4.3.0",
+    "@typescript-eslint/eslint-plugin": "~2.26.0",
+    "@typescript-eslint/parser": "~2.26.0",
     "@zeit/ncc": "~0.22.0",
+    "eslint": "~6.8.0",
+    "eslint-plugin-prettier": "~3.1.2",
     "jest": "~25.2.4",
     "jest-circus": "~25.2.4",
     "ts-jest": "~25.3.0",
-    "tslint": "~6.1.0",
     "typescript": "~3.8.3"
   }
 }

@@ -23,7 +23,6 @@ export class JsonPatcher implements patcher.IPatcher {
         }
         else {
             throw new Error("Failed to apply patch");
-
         }
     }
 }
