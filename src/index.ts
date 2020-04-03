@@ -1,13 +1,13 @@
 import * as core from "@actions/core";
 import * as glob from "@actions/glob";
-import { patchFiles, globFiles } from "./patchfiles";
+import * as patcher from "./patcher";
 
-async function run() {
+export async function run() {
     try {
-        let pattern = core.getInput("files", { required: true });
-        let globber = await globFiles(pattern);
-        let files = await globber.glob();
-        core.info(JSON.stringify(files));
+        let files = core.getInput("files", { required: true });
+        let patchSyntax = core.getInput("patch-syntax", { required: true });
+
+        let temp = core.getInput("teno");
     } catch (error) {
         core.setFailed(error.message);
     }

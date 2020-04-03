@@ -8,12 +8,21 @@ inputs:
   files:
     description: 'Files to scan. Accepts glob pattern using micromatch'
     required: true
+  patch-syntax:
+    description: 'Use the quick patch syntax to patch files. Refer readme for more info.'
+    required: true
+  output-patched-file:
+    description: 'Output patched file to the logs'
+    default: false
+  fail-if-no-files-patched:
+    description: 'Fail if no files are patched'
+    default: false
+  fail-if-error:
+    description: 'Set false to warn if error occurs or set true to fail the action'
+    default: true
   follow-symbolic-links:
     description: 'Indicates whether to follow symbolic links'
     default: true
-  patchsyntax:
-    description: 'Use the quick patch syntax to patch files. Refer docs for more info'
-    required: true
 runs:
   using: 'node12'
   main: 'dist/index.js'
