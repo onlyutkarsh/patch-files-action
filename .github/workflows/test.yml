@@ -22,7 +22,7 @@ jobs:
       with:
         files: |
           testfiles/**/*.json
-        patchsyntax: |
+        patch-syntax: |
           = /version => "${{ github.run_number }}"
           + /author => "${{ env.name }}"
           = /bugs/url => "https://www.google.com"

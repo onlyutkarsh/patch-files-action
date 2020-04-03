@@ -51,6 +51,8 @@ export async function patchAsync(patcher: IPatcher, filePattern: string[], patch
     let globber = await globFilesAsync(filePattern.join("\n"), followSymbolicLinks);
 
     for await (const file of globber.globGenerator()) {
+        let fileExtension = file.slice((file.lastIndexOf(".") - 1 >>> 0) + 2);
+
         core.info(`Patching file ${file}`);
         let fileContent = bom.removeBom(fs.readFileSync(file, { encoding: "utf8" }));
 

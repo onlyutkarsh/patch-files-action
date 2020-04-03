@@ -20,9 +20,7 @@ inputs:
   fail-if-error:
     description: 'Set false to warn if error occurs or set true to fail the action'
     default: true
-  follow-symbolic-links:
-    description: 'Indicates whether to follow symbolic links'
-    default: true
+  
 runs:
   using: 'node12'
   main: 'dist/index.js'
