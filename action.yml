@@ -10,8 +10,8 @@ inputs:
     description: 'Required. Use the quick patch syntax to patch files. Refer readme for more info.'
     required: true
   output-patched-file:
-    description: 'Output patched file to the logs. Default is false'
-    default: false
+    description: 'Output patched file to the logs. Default is true'
+    default: true
   fail-if-no-files-patched:
     description: 'Fail if no files are patched. Default is false'
     default: false

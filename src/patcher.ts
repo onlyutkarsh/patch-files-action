@@ -85,7 +85,6 @@ export async function patchAsync(
             filesPatched++;
 
         } catch (error) {
-            core.error(error);
             throw new Error("Error patching file");
         }
     }
