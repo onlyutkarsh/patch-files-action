@@ -75,7 +75,7 @@ export async function patchAsync(
 
             if (outputPatchedFile) {
                 core.info("===Patched file content===");
-                core.info(fileContent.content);
+                core.info(JSON.stringify(fileContent.content, null, 2));
             }
 
             fs.writeFileSync(file, bom.restoreBom(fileContent), { encoding: "utf8" });

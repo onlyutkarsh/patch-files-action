@@ -1,5 +1,5 @@
-name: 'Token Replacement'
-description: 'Replace tokens in files'
+name: 'Patch files'
+description: 'Patch JSON files'
 author: 'Utkarsh Shigihalli'
 
 inputs:
