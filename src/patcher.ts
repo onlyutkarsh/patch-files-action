@@ -78,14 +78,12 @@ export async function patchAsync(
                 core.info(fileContent.content);
             }
 
-            sh.chmod(666, file);
-
             fs.writeFileSync(file, bom.restoreBom(fileContent), { encoding: "utf8" });
 
             filesPatched++;
 
         } catch (error) {
-            throw new Error(`Error patching file ${error.message}`);
+            throw new Error(`Error patching file:\n${error.message}`);
         }
     }
     if (failIfNoFilesPatched && filesPatched === 0) {
