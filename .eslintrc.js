@@ -24,11 +24,12 @@ module.exports = {
     "rules": {
         "prefer-template": "error",
         "no-multiple-empty-lines": [
-            "warn",
+            "error",
             {
                 "max": 1
             }
         ],
+        "no-console": "warn",
         "no-unused-vars": [
             "off"
         ],

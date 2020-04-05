@@ -16,7 +16,7 @@ export function removeBom(content: string): IBomDetectResult {
 
 export function restoreBom(file: IBomDetectResult): string {
     if (file.hadBOM) {
-        return "\uFEFF" + file.content;
+        return `\uFEFF${file.content}`;
     }
     return file.content;
 }

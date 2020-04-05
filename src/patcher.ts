@@ -74,8 +74,8 @@ export async function patchAsync(
             core.info(`${file} is successfully patched`);
 
             if (outputPatchedFile) {
-                console.info("===Patched file content===");
-                console.info(fileContent.content);
+                core.info("===Patched file content===");
+                core.info(fileContent.content);
             }
 
             sh.chmod(666, file);
@@ -89,8 +89,8 @@ export async function patchAsync(
             throw new Error("Error patching file");
         }
     }
-    if (filesPatched <= 0 && failIfNoFilesPatched) {
-        throw new Error("No files patched");
+    if (failIfNoFilesPatched && filesPatched === 0) {
+        throw new Error("No files were patched");
     }
     return false;
 }

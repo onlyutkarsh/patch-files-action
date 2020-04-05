@@ -4,12 +4,15 @@ import * as patcher from "./patcher";
 import { JsonPatcher } from "./JsonPatcher";
 
 export async function run() {
+	let failIfError = false;
+	let failIfNoFilesPatched = false;
+
 	try {
 		let files = core.getInput("files", <core.InputOptions>{ required: true });
 		let patchSyntax = core.getInput("patch-syntax", <core.InputOptions>{ required: true });
 		let outputPatchedFile = core.getInput("output-patched-file") === "true";
-		let failIfError = core.getInput("fail-if-error") === "true";
-		let failIfNoFilesPatched = core.getInput("fail-if-no-files-patched") === "true";
+		failIfError = core.getInput("fail-if-error") === "true";
+		failIfNoFilesPatched = core.getInput("fail-if-no-files-patched") === "true";
 
 		let jsonPatcher = new JsonPatcher();
 
@@ -24,7 +27,10 @@ export async function run() {
 			message = "Unknown error ocurred";
 		}
 		core.error(message);
-		core.setFailed(message);
+		core.error(error);
+		if (failIfError || failIfNoFilesPatched) {
+			core.setFailed(message);
+		}
 	}
 }
 
