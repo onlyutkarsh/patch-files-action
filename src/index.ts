@@ -27,7 +27,6 @@ export async function run() {
 			message = "Unknown error ocurred";
 		}
 		core.error(message);
-		core.error(error);
 		if (failIfError || failIfNoFilesPatched) {
 			core.setFailed(message);
 		}
