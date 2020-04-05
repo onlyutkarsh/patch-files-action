@@ -1,5 +1,5 @@
 name: 'Patch files'
-description: 'Patch JSON files'
+description: 'A simple action to patch JSON files'
 author: 'Utkarsh Shigihalli'
 
 inputs:
