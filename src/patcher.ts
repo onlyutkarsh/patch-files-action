@@ -85,7 +85,7 @@ export async function patchAsync(
             filesPatched++;
 
         } catch (error) {
-            throw new Error("Error patching file");
+            throw new Error(`Error patching file ${error.message}`);
         }
     }
     if (failIfNoFilesPatched && filesPatched === 0) {
