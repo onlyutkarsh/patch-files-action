@@ -27,3 +27,4 @@ jobs:
           + /author => "${{ env.name }}"
           = /bugs/url => "https://www.google.com"
           + /buildId => "${{ github.run_number }}"
+          - /bugs/name

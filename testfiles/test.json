@@ -3,6 +3,7 @@
     "keywords": [],
     "author": "onlyutkarsh",
     "bugs": {
-        "url": "http://www.dummy.com"
+        "url": "http://www.dummy.com",
+        "name": "test"
     }
 }

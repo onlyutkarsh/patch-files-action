@@ -94,6 +94,6 @@ jobs:
 
 ```
 
-# Ack
+# Acknowledgment
 
 - Inspired from https://marketplace.visualstudio.com/items?itemName=geeklearningio.gl-vsts-tasks-file-patch task for Azure Pipelines
