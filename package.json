@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "watch": "tsc --watch",
+    "watch": "tsc --watch && npm run lint",
     "package": "ncc build src/index.ts -o dist",
     "test": "jest --runInBand",
     "test-watch": "jest --watch --runInBand",
@@ -25,6 +25,12 @@
   "jest": {
     "testEnvironment": "node"
   },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run lint",
+      "pre-push": "npm test"
+    }
+  },
   "dependencies": {
     "@actions/core": "~1.2.3",
     "@actions/github": "~2.1.1",
@@ -43,6 +49,7 @@
     "@zeit/ncc": "~0.22.0",
     "eslint": "~6.8.0",
     "eslint-plugin-prettier": "~3.1.2",
+    "husky": "~4.2.3",
     "jest": "~25.2.4",
     "jest-circus": "~25.2.4",
     "ts-jest": "~25.3.0",

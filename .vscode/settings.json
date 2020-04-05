@@ -12,5 +12,5 @@
   },
   "problems.showCurrentInStatus": true,
   "git.enableCommitSigning": true,
-  "editor.wordWrap": "on",
+  "editor.wordWrap": "on"
 }

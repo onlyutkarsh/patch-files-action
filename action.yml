@@ -10,13 +10,13 @@ inputs:
     description: 'Required. Use the quick patch syntax to patch files. Refer readme for more info.'
     required: true
   output-patched-file:
-    description: 'Output patched file to the logs. Default is 'false''
+    description: 'Output patched file to the logs. Default is false'
     default: false
   fail-if-no-files-patched:
-    description: 'Fail if no files are patched. Default is 'false''
+    description: 'Fail if no files are patched. Default is false'
     default: false
   fail-if-error:
-    description: 'Set 'false' to warn if error occurs or set 'true' to fail the action. Default is 'false''
+    description: 'Set 'false' to warn if error occurs or set 'true' to fail the action. Default is false'
     default: false
   
 runs:
