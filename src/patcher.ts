@@ -4,9 +4,11 @@ import * as glob from "@actions/glob";
 import * as core from "@actions/core";
 import * as bom from "../src/bom";
 import * as fs from "fs";
+import * as sh from "shelljs";
+import * as fjp from "fast-json-patch";
 
 export interface IPatcher {
-    apply(content: string, patchSyntax: string): string;
+    apply(content: string, patchSyntax: fjp.Operation[]): string;
 }
 
 export interface IPatch {
@@ -46,24 +48,51 @@ export function stringify(operation: Operation): string {
     }
 }
 
-export async function patchAsync(patcher: IPatcher, filePattern: string[], patchSyntax: string[], followSymbolicLinks: string = "true") {
+export async function patchAsync(
+    patcher: IPatcher,
+    filePattern: string,
+    patchSyntax: string,
+    outputPatchedFile: boolean,
+    failIfNoFilesPatched: boolean,
+    failIfError: boolean,
+    followSymbolicLinks: string = "true"): Promise<boolean> {
 
-    let globber = await globFilesAsync(filePattern.join("\n"), followSymbolicLinks);
+    let globber = await globFilesAsync(filePattern, followSymbolicLinks);
 
+    let patches = parsePatchSyntax(patchSyntax);
+
+    let filesPatched = 0;
     for await (const file of globber.globGenerator()) {
+
         let fileExtension = file.slice((file.lastIndexOf(".") - 1 >>> 0) + 2);
 
         core.info(`Patching file ${file}`);
         let fileContent = bom.removeBom(fs.readFileSync(file, { encoding: "utf8" }));
 
         try {
-            fileContent.content = patcher.apply(fileContent.content, patchSyntax.join("\n"));
+            fileContent.content = patcher.apply(fileContent.content, patches);
             core.info(`${file} is successfully patched`);
-        } catch (error) {
-            //! COLLATE ERRORS AND REPORT ONCE
-        }
 
+            if (outputPatchedFile) {
+                console.info("===Patched file content===");
+                console.info(fileContent.content);
+            }
+
+            sh.chmod(666, file);
+
+            fs.writeFileSync(file, bom.restoreBom(fileContent), { encoding: "utf8" });
+
+            filesPatched++;
+
+        } catch (error) {
+            core.error(error);
+            throw new Error("Error patching file");
+        }
     }
+    if (filesPatched <= 0 && failIfNoFilesPatched) {
+        throw new Error("No files patched");
+    }
+    return false;
 }
 
 export function parsePatchSyntax(patchSyntax: string): Operation[] {
@@ -94,29 +123,18 @@ export function parsePatchSyntax(patchSyntax: string): Operation[] {
                     path: (<any>match).path,
                     value: parseValue(match)
                 });
-            } else if (op === "&") {
-                result.push({
-                    op: "copy",
-                    path: (<any>match).value,
-                    from: (<any>match).path
-                });
-            } else if (op === ">") {
-                result.push({
-                    op: "move",
-                    path: (<any>match).value,
-                    from: (<any>match).path
-                });
-            } else if (op === "?") {
-                result.push({
-                    op: "test",
-                    path: (<any>match).path,
-                    value: parseValue(match)
-                });
             } else {
-                throw new Error("operator " + op + " is no supported.");
+                throw new Error(`Operator '${op}' is no supported.`);
             }
         }
     );
+
+    for (let index = 0; index < result.length; index++) {
+        const patch = result[index];
+        if (patch.path && patch.path[0] != "/") {
+            throw new Error(`Path should start with a leading slash. Please verify path '${patch.path}' at index: '${index}'`);
+        }
+    }
 
     return result;
 }
@@ -126,12 +144,7 @@ function parseValue(match: MatchArray): any {
         return JSON.parse((<any>match).value);
     } catch (error) {
         throw new Error(
-            "Failed to parse value at line " +
-            String(match.index) +
-            ": `" +
-            match.input +
-            "`, " +
-            String(error)
+            `Failed to parse value at line ${match.index}: '${match.input}', ${error}`
         );
     }
 }

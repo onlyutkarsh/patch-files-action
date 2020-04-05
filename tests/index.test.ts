@@ -8,18 +8,6 @@ import * as core from "@actions/core";
 const inputSpy = jest.spyOn(core, "getInput");
 jest.mock("@actions/core");
 
-describe("input validation", () => {
-    test("validate all inputs are ready correctly", async () => {
-        await index.run();
-        expect(inputSpy).toHaveBeenCalledWith("files", { "required": true });
-        expect(inputSpy).toHaveBeenCalledWith("patch-syntax", { "required": true });
-        expect(inputSpy).toHaveBeenCalledWith("output-patched-file");
-        expect(inputSpy).toHaveBeenCalledWith("fail-if-no-files-patched");
-        expect(inputSpy).toHaveBeenCalledWith("fail-if-error");
-    });
-
-});
-
 describe("basic functionality", () => {
     beforeEach(async () => {
         await fs.mkdir("temp");
@@ -48,6 +36,15 @@ describe("basic functionality", () => {
         jest.restoreAllMocks();
     });
 
+    test("validate all inputs are ready correctly", async () => {
+        await index.run();
+        expect(inputSpy).toHaveBeenCalledWith("files", { "required": true });
+        expect(inputSpy).toHaveBeenCalledWith("patch-syntax", { "required": true });
+        expect(inputSpy).toHaveBeenCalledWith("output-patched-file");
+        expect(inputSpy).toHaveBeenCalledWith("fail-if-no-files-patched");
+        expect(inputSpy).toHaveBeenCalledWith("fail-if-error");
+    });
+
     test("find matching files in a directory should return one file", async () => {
         let paths = await readfiles();
         expect(paths.length).toEqual(1);
@@ -67,6 +64,20 @@ describe("basic functionality", () => {
         expect(operation.length).toEqual(4);
     });
 
+    test("patch syntax with leading / should throw exception", async () => {
+        let patchSyntax = [
+            "= version => \"1.0.1\"",
+        ];
+        expect(() => patcher.parsePatchSyntax(patchSyntax.join("\n"))).toThrowError("Path should start with a leading slash. Please verify path 'version' at index: '0'");
+    });
+
+    test("invalid operator in patch syntax should throw exception", async () => {
+        let patchSyntax = [
+            "& version => \"1.0.1\""
+        ];
+        expect(() => patcher.parsePatchSyntax(patchSyntax.join("\n"))).toThrowError("Operator '&' is no supported.");
+    });
+
     test("apply patch and validate json", async () => {
 
         let filePattern = ["temp/*.json"];
@@ -79,7 +90,32 @@ describe("basic functionality", () => {
 
         let jp = new JsonPatcher();
 
-        let content = await patcher.patchAsync(jp, filePattern, patchSyntax);
+    });
+
+    test("should throw error if failIfNoFilesPatched = true and filedPatched = 0", async () => {
+        let getInputSpy = jest.spyOn(core, "getInput").mockImplementation((name, options) => {
+            switch (name) {
+                case "files": return ["temp/*.nonexistent"]
+                    .join("\n");
+                case "patch-syntax":
+                    return [
+                        "= /version => \"1.0.1\"",
+                        "= /author => \"utkarsh\"",
+                        "+ /bugs/name => \"Google\"",
+                        "= /bugs/url => \"https://www.google.com\""
+                    ].join("\n");
+                case "output-patched-file": return "false";
+                case "fail-if-error": return "false";
+                case "fail-if-no-files-patched": return "true"; //for throw error if set to true
+            }
+            return "";
+        });
+
+        let setFaledSpy = jest.spyOn(core, "setFailed");
+
+        await index.run();
+
+        expect(setFaledSpy).toHaveBeenCalledWith("No files patched");
 
     });
 

@@ -1,26 +1,27 @@
 name: 'Token Replacement'
 description: 'Replace tokens in files'
-author: 'onlyutkarsh'
-branding:
-  icon: file-text
-  color: blue
+author: 'Utkarsh Shigihalli'
+
 inputs:
   files:
-    description: 'Files to scan. Accepts glob pattern using micromatch'
+    description: 'Required. Files to scan. e.g., testfiles/**/*.json'
     required: true
   patch-syntax:
-    description: 'Use the quick patch syntax to patch files. Refer readme for more info.'
+    description: 'Required. Use the quick patch syntax to patch files. Refer readme for more info.'
     required: true
   output-patched-file:
-    description: 'Output patched file to the logs'
+    description: 'Output patched file to the logs. Default is 'false''
     default: false
   fail-if-no-files-patched:
-    description: 'Fail if no files are patched'
+    description: 'Fail if no files are patched. Default is 'false''
     default: false
   fail-if-error:
-    description: 'Set false to warn if error occurs or set true to fail the action'
-    default: true
+    description: 'Set 'false' to warn if error occurs or set 'true' to fail the action. Default is 'false''
+    default: false
   
 runs:
   using: 'node12'
   main: 'dist/index.js'
+branding:
+  icon: file-text
+  color: blue

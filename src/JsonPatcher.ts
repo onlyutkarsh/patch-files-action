@@ -1,14 +1,13 @@
 import * as patcher from "./patcher";
-import * as jsonPatch from "fast-json-patch";
+import * as fjp from "fast-json-patch";
 import * as core from "@actions/core";
 
 export class JsonPatcher implements patcher.IPatcher {
-    apply(content: string, patchSyntax: string): string {
+    apply(content: string, patchContent: fjp.Operation[]): string {
 
         let json = JSON.parse(content);
-        let patchContent = patcher.parsePatchSyntax(patchSyntax);
 
-        let patchError = jsonPatch.validate(patchContent, json);
+        let patchError = fjp.validate(patchContent, json);
 
         if (patchError) {
             core.warning(`Invalid patch at index '${patchError.index}'`);
@@ -17,7 +16,7 @@ export class JsonPatcher implements patcher.IPatcher {
             throw new Error(`'Invalid patch at index '${patchError.index}: ${patchError.name}, ${patchError.message}`);
         }
 
-        let result = jsonPatch.applyPatch(json, patchContent);
+        let result = fjp.applyPatch(json, patchContent);
         if (result) {
             return JSON.stringify(json);
         }

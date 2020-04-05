@@ -22,6 +22,7 @@ module.exports = {
         "prettier"
     ],
     "rules": {
+        "prefer-template": "error",
         "no-multiple-empty-lines": [
             "warn",
             {
@@ -29,7 +30,7 @@ module.exports = {
             }
         ],
         "no-unused-vars": [
-            "warn"
+            "off"
         ],
         "linebreak-style": [
             "warn",
