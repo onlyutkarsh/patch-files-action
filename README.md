@@ -2,7 +2,7 @@
 
 A simple action to patch JSON files.
 
-> Only JSON files are supported at the moment. Plan is to support other extensions in the later versions.
+> Only JSON files are supported at the moment. Support for other file types is planned in the later versions.
 
 # Inputs
 
@@ -80,7 +80,8 @@ jobs:
     steps:
     - uses: actions/checkout@v1
 
-    - uses: ./
+    - name: Patch files
+      uses: onlyutkarsh/patch-files-action@v1.0.0
       env:
         name: utkarsh
       with:
