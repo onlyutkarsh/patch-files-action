@@ -4,8 +4,6 @@ A simple action to patch JSON files.
 
 > Only JSON files are supported at the moment. Support for other file types is planned in the later versions.
 
-![tests](https://github.com/onlyutkarsh/patch-files-action/workflows/tests/badge.svg)
-
 # Inputs
 
 - `files`
