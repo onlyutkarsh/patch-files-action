@@ -4,6 +4,8 @@ A simple action to patch JSON files.
 
 > Only JSON files are supported at the moment. Support for other file types is planned in the later versions.
 
+![tests](https://github.com/onlyutkarsh/patch-files-action/workflows/tests/badge.svg)
+
 # Inputs
 
 - `files`
@@ -17,7 +19,7 @@ A simple action to patch JSON files.
     Supported Operations:
     - `+` add. Example:  `+ /version => "1.0.0"`
     - `-` remove. Example: `- /version` **Note:** No value is passed.
-    - `=` replace. Example: `-/version => "1.0.1"`
+    - `=` replace. Example: `= /version => "1.0.1"`
 
     **Example**:
     
@@ -26,7 +28,6 @@ A simple action to patch JSON files.
     {
         "version": "1.0.0",
         "keywords": [],
-        "author": "onlyutkarsh",
         "bugs": {
             "url": "http://www.dummy.com"
         }
@@ -81,7 +82,7 @@ jobs:
     - uses: actions/checkout@v1
 
     - name: Patch files
-      uses: onlyutkarsh/patch-files-action@v1.0.0
+      uses: onlyutkarsh/patch-files-action@v1.0.1
       env:
         name: utkarsh
       with:
