@@ -4,7 +4,7 @@ A simple action to patch JSON files.
 
 > Only JSON files are supported at the moment. Support for other file types is planned in the later versions.
 
-# Inputs
+## Inputs
 
 - `files`
    
@@ -61,7 +61,7 @@ A simple action to patch JSON files.
 
     If `true`, failes the build when an error occurrs. *Optional. Default is `false`* 
 
-# Sample action
+## Sample action
 
 ```yaml
 
@@ -94,6 +94,6 @@ jobs:
 
 ```
 
-# Acknowledgment
+## Acknowledgment
 
 - Inspired from https://marketplace.visualstudio.com/items?itemName=geeklearningio.gl-vsts-tasks-file-patch task for Azure Pipelines
