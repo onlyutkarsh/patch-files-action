@@ -4,7 +4,6 @@ import * as glob from "@actions/glob";
 import * as core from "@actions/core";
 import * as bom from "../src/bom";
 import * as fs from "fs";
-import * as sh from "shelljs";
 import * as fjp from "fast-json-patch";
 
 export interface IPatcher {
@@ -18,12 +17,12 @@ export interface IPatch {
     from?: string;
 }
 
-export async function globFilesAsync(patterns: string, followSymbolicLinks: string = "true"): Promise<glob.Globber> {
+export async function globFilesAsync(patterns: string, followSymbolicLinks = "true"): Promise<glob.Globber> {
     const globOptions = {
         followSymbolicLinks: followSymbolicLinks.toUpperCase() !== "FALSE"
     };
 
-    let globber = await glob.create(patterns, globOptions);
+    const globber = await glob.create(patterns, globOptions);
     return globber;
 
 }
@@ -55,19 +54,17 @@ export async function patchAsync(
     outputPatchedFile: boolean,
     failIfNoFilesPatched: boolean,
     failIfError: boolean,
-    followSymbolicLinks: string = "true"): Promise<boolean> {
+    followSymbolicLinks = "true"): Promise<boolean> {
 
-    let globber = await globFilesAsync(filePattern, followSymbolicLinks);
+    const globber = await globFilesAsync(filePattern, followSymbolicLinks);
 
-    let patches = parsePatchSyntax(patchSyntax);
+    const patches = parsePatchSyntax(patchSyntax);
 
     let filesPatched = 0;
     for await (const file of globber.globGenerator()) {
 
-        let fileExtension = file.slice((file.lastIndexOf(".") - 1 >>> 0) + 2);
-
         core.info(`Patching file ${file}`);
-        let fileContent = bom.removeBom(fs.readFileSync(file, { encoding: "utf8" }));
+        const fileContent = bom.removeBom(fs.readFileSync(file, { encoding: "utf8" }));
 
         try {
             fileContent.content = patcher.apply(fileContent.content, patches);
@@ -83,7 +80,7 @@ export async function patchAsync(
             filesPatched++;
 
         } catch (error) {
-            throw new Error(`Error patching file:\n${error.message}`);
+            throw new Error(`Error patching file:\n${error}`);
         }
     }
     if (failIfNoFilesPatched && filesPatched === 0) {
@@ -93,38 +90,41 @@ export async function patchAsync(
 }
 
 export function parsePatchSyntax(patchSyntax: string): Operation[] {
-    var result: Operation[] = [];
+    const result: Operation[] = [];
 
-    XRegExp.forEach(
-        patchSyntax,
-        XRegExp(
-            "^\\s*(?<op>\\+|-|=|&|>|\\?)\\s*(?<path>.*?)\\s*(=>\\s*(?<value>.*))?$",
-            "gm"
-        ),
-        match => {
-            var op = (<any>match).op;
-            if (op === "+") {
-                result.push({
-                    op: "add",
-                    path: (<any>match).path,
-                    value: parseValue(match)
-                });
-            } else if (op === "-") {
-                result.push({
-                    op: "remove",
-                    path: (<any>match).path
-                });
-            } else if (op === "=") {
-                result.push({
-                    op: "replace",
-                    path: (<any>match).path,
-                    value: parseValue(match)
-                });
-            } else {
-                throw new Error(`Operator '${op}' is no supported.`);
+    const regex = "^\\s*(?<op>\\+|-|=|&|>|\\?)\\s*(?<path>.*?)\\s*(=>\\s*(?<value>.*))?$";
+    XRegExp.forEach(patchSyntax, XRegExp(regex, "gm"), (match: MatchArray) => {
+            if(!match.groups) {
+              throw new Error(`Unable to parse patch syntax at line ${match.index}: '${match.input}'`);
             }
+            const op = match.groups.op; // +, -, =, &, >, ?
+            const path = match.groups.path;
+            const value = match.groups.value;
+            switch (op) {
+                case "+":
+                    result.push({
+                        op: "add",
+                        path: path,
+                        value: parseValue(value)
+                    });
+                    break;
+                case "-":
+                    result.push({
+                        op: "remove",
+                        path: path
+                    });
+                    break;
+                case "=":
+                    result.push({
+                        op: "replace",
+                        path: path,
+                        value: parseValue(value)
+                    });
+                    break;
+                default:
+                    throw new Error(`Operator '${op}' is not supported.`);
         }
-    );
+      });
 
     for (let index = 0; index < result.length; index++) {
         const patch = result[index];
@@ -136,12 +136,12 @@ export function parsePatchSyntax(patchSyntax: string): Operation[] {
     return result;
 }
 
-function parseValue(match: MatchArray): any {
+function parseValue(value: string): string {
     try {
-        return JSON.parse((<any>match).value);
+        return JSON.parse(value);
     } catch (error) {
         throw new Error(
-            `Failed to parse value at line ${match.index}: '${match.input}', ${error}`
+            `Failed to parse value at line '${value}', ${error}`
         );
     }
 }

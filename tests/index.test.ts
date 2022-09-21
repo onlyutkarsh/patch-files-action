@@ -131,7 +131,7 @@ describe("index.ts tests", () => {
 
         await index.run();
 
-        expect(setFaledSpy).toHaveBeenCalledWith("Operator '&' is no supported.");
+        expect(setFaledSpy).toHaveBeenCalledWith("Operator '&' is not supported.");
     });
 
     test("invalid operator in patch syntax should *NOT* throw exception if failIfError = false", async () => {

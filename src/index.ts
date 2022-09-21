@@ -1,5 +1,4 @@
 import * as core from "@actions/core";
-import * as glob from "@actions/glob";
 import * as patcher from "./patcher";
 import { JsonPatcher } from "./JsonPatcher";
 
@@ -8,13 +7,13 @@ export async function run() {
 	let failIfNoFilesPatched = false;
 
 	try {
-		let files = core.getInput("files", <core.InputOptions>{ required: true });
-		let patchSyntax = core.getInput("patch-syntax", <core.InputOptions>{ required: true });
-		let outputPatchedFile = core.getInput("output-patched-file") === "true";
+		const files = core.getInput("files", <core.InputOptions>{ required: true });
+		const patchSyntax = core.getInput("patch-syntax", <core.InputOptions>{ required: true });
+		const outputPatchedFile = core.getInput("output-patched-file") === "true";
 		failIfError = core.getInput("fail-if-error") === "true";
 		failIfNoFilesPatched = core.getInput("fail-if-no-files-patched") === "true";
 
-		let jsonPatcher = new JsonPatcher();
+		const jsonPatcher = new JsonPatcher();
 
 		await patcher.patchAsync(jsonPatcher, files, patchSyntax, outputPatchedFile, failIfNoFilesPatched, failIfError);
 

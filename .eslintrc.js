@@ -1,53 +1,21 @@
 module.exports = {
-    "env": {
-        "browser": true,
-        "es6": true,
-        "jest": true
-    },
-    "extends": [
-        "eslint:recommended",
-        "plugin:@typescript-eslint/eslint-recommended"
-    ],
-    "globals": {
-        "Atomics": "readonly",
-        "SharedArrayBuffer": "readonly"
-    },
-    "parser": "@typescript-eslint/parser",
-    "parserOptions": {
-        "ecmaVersion": 2018,
-        "sourceType": "module"
-    },
-    "plugins": [
-        "@typescript-eslint",
-        "prettier"
-    ],
-    "rules": {
-        "prefer-template": "error",
-        "no-multiple-empty-lines": [
-            "error",
-            {
-                "max": 1
-            }
-        ],
-        "no-console": "warn",
-        "no-unused-vars": [
-            "off"
-        ],
-        "linebreak-style": [
-            "warn",
-            "windows"
-        ],
-        "quotes": [
-            "error",
-            "double"
-        ],
-        "semi": [
-            "error",
-            "always"
-        ],
-        "curly": [
-            "error",
-            "all"
-        ]
-    }
+	ignorePatterns: [ '**/*.d.ts', '**/*.test.ts', '**/*.js' ],
+	parser: '@typescript-eslint/parser',
+	extends: [ 'plugin:@typescript-eslint/recommended' ],
+	plugins: [],
+	parserOptions: {
+		ecmaVersion: 2018, // Allows for the parsing of modern ECMAScript features
+		sourceType: 'module' // Allows for the use of imports
+	},
+	rules: {
+		'@typescript-eslint/no-use-before-define': 'off',
+		'@typescript-eslint/explicit-function-return-type': 'off',
+		'@typescript-eslint/no-non-null-assertion': 'off',
+		'@typescript-eslint/explicit-module-boundary-types': 'off',
+		'@typescript-eslint/prefer-const': 'off',
+		'@typescript-eslint/no-empty-function': 'off',
+		"@typescript-eslint/no-unused-vars": 'warn'
+		// Place to specify ESLint rules. Can be used to overwrite rules specified from the extended configs
+		// e.g. "@typescript-eslint/explicit-function-return-type": "off",
+	}
 };

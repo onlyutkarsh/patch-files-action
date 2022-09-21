@@ -5,9 +5,9 @@ import * as core from "@actions/core";
 export class JsonPatcher implements patcher.IPatcher {
     apply(content: string, patchContent: fjp.Operation[]): string {
 
-        let json = JSON.parse(content);
+        const json = JSON.parse(content);
 
-        let patchError = fjp.validate(patchContent, json);
+        const patchError = fjp.validate(patchContent, json);
 
         if (patchError) {
             core.warning(`Invalid patch at index '${patchError.index}'`);
@@ -16,7 +16,7 @@ export class JsonPatcher implements patcher.IPatcher {
             throw new Error(`'Invalid patch at index '${patchError.index}: ${patchError.name}, ${patchError.message}`);
         }
 
-        let result = fjp.applyPatch(json, patchContent);
+        const result = fjp.applyPatch(json, patchContent);
         if (result) {
             return JSON.stringify(json);
         }
