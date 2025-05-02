@@ -4,7 +4,11 @@ author: 'Utkarsh Shigihalli'
 
 inputs:
   files:
-    description: 'Required. Files to scan. e.g., testfiles/**/*.json'
+    description:
+      'Required. Files to scan. You can separate multiple files either by commas or by newlines.
+      For example: "src/**/*.json, src/**/*.xml" or:
+      src/**/*.json
+      src/**/*.xml'
     required: true
   patch-syntax:
     description: 'Required. Use the quick patch syntax to patch files. Refer readme for more info.'
@@ -18,7 +22,7 @@ inputs:
   fail-if-error:
     description: 'Set false to warn if error occurs or set true to fail the action. Default is false'
     default: false
-  
+
 runs:
   using: 'node12'
   main: 'dist/index.js'

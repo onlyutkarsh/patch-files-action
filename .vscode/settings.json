@@ -12,5 +12,17 @@
   },
   "problems.showCurrentInStatus": true,
   "git.enableCommitSigning": true,
-  "editor.wordWrap": "on"
+  "editor.wordWrap": "on",
+  "jestrunner.jestCommand": "pnpm run test --",
+  "jestrunner.debugOptions": {
+    "runtimeExecutable": "pnpm",
+    "runtimeArgs": [
+      "test",
+      "${fileBasename}",
+      "--runInBand",
+      "--no-cache",
+      "--watchAll=false",
+      "--color"
+    ]
+  }
 }
