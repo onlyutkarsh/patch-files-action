@@ -60,6 +60,17 @@ jobs:
           VERSION=${{ inputs.version }}
           echo "tag=$VERSION" >> $GITHUB_OUTPUT
           echo "major=$(echo $VERSION | cut -d. -f1)" >> $GITHUB_OUTPUT
+          # Remove 'v' prefix for package.json
+          echo "version_number=$(echo $VERSION | sed 's/^v//')" >> $GITHUB_OUTPUT
+
+      - name: Update package.json version
+        run: |
+          npm version ${{ steps.version.outputs.version_number }} --no-git-tag-version
+          git config user.name github-actions[bot]
+          git config user.email github-actions[bot]@users.noreply.github.com
+          git add package.json package-lock.json
+          git commit -m "chore: bump version to ${{ steps.version.outputs.tag }}"
+          git push
 
       - name: Create version tag
         run: |

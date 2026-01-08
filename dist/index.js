@@ -32471,14 +32471,36 @@ class JsonPatcher {
         }
         const result = fjp.applyPatch(json, patchContent);
         if (result) {
-            // Detect indentation from original content for consistent formatting
-            const indentMatch = content.match(/^{\n( +)/);
-            const indent = indentMatch ? indentMatch[1].length : 2;
-            return JSON.stringify(json, null, indent);
+            const format = this.detectFormatting(content);
+            const stringified = JSON.stringify(json, null, format.indent);
+            // If the original content used CRLF, convert LF to CRLF
+            if (format.newline === "\r\n") {
+                return stringified.replace(/\n/g, "\r\n");
+            }
+            return stringified;
         }
         else {
             throw new Error("Failed to apply patch");
         }
+    }
+    detectFormatting(content) {
+        // Detect newline style
+        const newline = content.includes("\r\n") ? "\r\n" : "\n";
+        // Detect indentation by looking for the first indented line
+        // This works for both objects starting with { and arrays starting with [
+        const indentMatch = content.match(/^[{[]\r?\n([ \t]+)/);
+        if (indentMatch) {
+            const indentStr = indentMatch[1];
+            // If it's tabs, use tab character; otherwise use the number of spaces
+            if (indentStr[0] === "\t") {
+                return { indent: "\t", newline };
+            }
+            else {
+                return { indent: indentStr.length, newline };
+            }
+        }
+        // Fallback: default to 2 spaces if no indentation detected
+        return { indent: 2, newline };
     }
 }
 exports.JsonPatcher = JsonPatcher;
@@ -32685,15 +32707,21 @@ async function patchAsync(patcher, filePattern, patchSyntax, outputPatchedFile, 
     if (failIfNoFilesPatched && filesPatched === 0) {
         throw new Error("No files were patched");
     }
-    return false;
+    return filesPatched > 0;
 }
 function parsePatchSyntax(patchSyntax) {
     const result = [];
-    const regex = /^\s*(?<op>\+|-|=|&|>|\?)\s*(?<path>.*?)\s*(=>\s*(?<value>.*))?$/gm;
-    const matches = patchSyntax.matchAll(regex);
-    for (const match of matches) {
-        if (!match.groups) {
-            throw new Error(`Unable to parse patch syntax at line ${match.index}: '${match.input}'`);
+    const regex = /^\s*(?<op>\+|-|=|&|>|\?)\s*(?<path>.*?)\s*(=>\s*(?<value>.*))?$/;
+    const lines = patchSyntax.split("\n");
+    for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+        const line = lines[lineIndex].trim();
+        // Skip empty lines and comments
+        if (line === "" || line.startsWith("#") || line.startsWith("//")) {
+            continue;
+        }
+        const match = line.match(regex);
+        if (!match || !match.groups) {
+            throw new Error(`Unable to parse patch syntax at line ${lineIndex + 1}: '${line}'. Expected format: '<op> <path> => <value>' where op is one of +, -, =. Use # or // for comments.`);
         }
         const op = match.groups.op; // +, -, =, &, >, ?
         const path = match.groups.path;

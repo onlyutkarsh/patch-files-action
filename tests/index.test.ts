@@ -541,4 +541,257 @@ describe("index.ts tests", () => {
         let result = JSON.parse(response);
         expect(result.version).toEqual("3.0.0");
     });
+
+    test("malformed patch syntax should throw error with line number", () => {
+        let patchSyntax = [
+            '= /version => "1.0.1"',
+            'this is a typo',  // This line doesn't match the pattern
+            '+ /author => "Test"'
+        ];
+
+        expect(() => {
+            patcher.parsePatchSyntax(patchSyntax.join("\n"));
+        }).toThrow("Unable to parse patch syntax at line 2");
+    });
+
+    test("patch syntax with # comments should be skipped", () => {
+        let patchSyntax = [
+            '= /version => "1.0.1"',
+            '# This is a comment',
+            '+ /author => "Test"'
+        ];
+
+        let operation = patcher.parsePatchSyntax(patchSyntax.join("\n"));
+        expect(operation.length).toEqual(2);
+        expect(operation[0].op).toEqual("replace");
+        expect(operation[1].op).toEqual("add");
+    });
+
+    test("patch syntax with // comments should be skipped", () => {
+        let patchSyntax = [
+            '= /version => "1.0.1"',
+            '// This is also a comment',
+            '+ /author => "Test"'
+        ];
+
+        let operation = patcher.parsePatchSyntax(patchSyntax.join("\n"));
+        expect(operation.length).toEqual(2);
+        expect(operation[0].op).toEqual("replace");
+        expect(operation[1].op).toEqual("add");
+    });
+
+    test("patch syntax with mixed comments and operations", () => {
+        let patchSyntax = [
+            '# Update version',
+            '= /version => "1.0.1"',
+            '',
+            '// Add new author',
+            '+ /author => "Test"',
+            '# Remove bugs section',
+            '- /bugs'
+        ];
+
+        let operation = patcher.parsePatchSyntax(patchSyntax.join("\n"));
+        expect(operation.length).toEqual(3);
+        expect(operation[0].op).toEqual("replace");
+        expect(operation[1].op).toEqual("add");
+        expect(operation[2].op).toEqual("remove");
+    });
+
+    test("patch syntax with empty lines should be skipped", () => {
+        let patchSyntax = [
+            '= /version => "1.0.1"',
+            '',  // empty line should be allowed
+            '+ /author => "Test"',
+            '   ',  // whitespace-only line should be allowed
+            '- /bugs'
+        ];
+
+        let operation = patcher.parsePatchSyntax(patchSyntax.join("\n"));
+        expect(operation.length).toEqual(3);
+        expect(operation[0].op).toEqual("replace");
+        expect(operation[1].op).toEqual("add");
+        expect(operation[2].op).toEqual("remove");
+    });
+
+    test("patch syntax with missing operator should throw error", () => {
+        let patchSyntax = [
+            '= /version => "1.0.1"',
+            '/author => "Test"',  // Missing operator
+        ];
+
+        expect(() => {
+            patcher.parsePatchSyntax(patchSyntax.join("\n"));
+        }).toThrow("Unable to parse patch syntax at line 2");
+    });
+
+    test("patch syntax with missing value for add operation should throw error", () => {
+        let patchSyntax = [
+            '+ /version',  // Missing => value part
+        ];
+
+        expect(() => {
+            patcher.parsePatchSyntax(patchSyntax.join("\n"));
+        }).toThrow("Failed to parse value");
+    });
+
+    test("preserve JSON formatting with tab indentation", () => {
+        // Create JSON with tab indentation
+        const formattedJson = JSON.stringify(inputJson, null, "\t");
+        fs.writeFileSync("temp/tab-formatted.json", formattedJson, { encoding: "utf8" });
+
+        let patchSyntax = [
+            '= /version => "2.0.0"'
+        ];
+
+        let operation = patcher.parsePatchSyntax(patchSyntax.join("\n"));
+        let fileContent = bom.removeBom(fs.readFileSync("temp/tab-formatted.json", { encoding: "utf8" }));
+
+        let jp = new JsonPatcher();
+        let response = jp.apply(fileContent.content, operation);
+
+        // Verify the output uses tab indentation
+        expect(response).toContain('\n\t"version"');
+        expect(response).toContain('\n\t"keywords"');
+
+        // Verify content is correct
+        let result = JSON.parse(response);
+        expect(result.version).toEqual("2.0.0");
+    });
+
+    test("preserve JSON formatting with CRLF line endings", () => {
+        // Create JSON with CRLF line endings
+        const formattedJson = JSON.stringify(inputJson, null, 2).replace(/\n/g, "\r\n");
+        fs.writeFileSync("temp/crlf-formatted.json", formattedJson, { encoding: "utf8" });
+
+        let patchSyntax = [
+            '= /version => "3.0.0"'
+        ];
+
+        let operation = patcher.parsePatchSyntax(patchSyntax.join("\n"));
+        let fileContent = bom.removeBom(fs.readFileSync("temp/crlf-formatted.json", { encoding: "utf8" }));
+
+        let jp = new JsonPatcher();
+        let response = jp.apply(fileContent.content, operation);
+
+        // Verify the output uses CRLF line endings
+        expect(response).toContain("\r\n");
+        expect(response.split("\r\n").length).toBeGreaterThan(1);
+
+        // Verify content is correct
+        let result = JSON.parse(response);
+        expect(result.version).toEqual("3.0.0");
+    });
+
+    test("preserve JSON formatting for array at root level", () => {
+        const arrayJson = [
+            { "id": 1, "name": "item1" },
+            { "id": 2, "name": "item2" }
+        ];
+
+        // Create JSON array with 4-space indentation
+        const formattedJson = JSON.stringify(arrayJson, null, 4);
+        fs.writeFileSync("temp/array-formatted.json", formattedJson, { encoding: "utf8" });
+
+        let patchSyntax = [
+            '= /0/name => "updated-item1"'
+        ];
+
+        let operation = patcher.parsePatchSyntax(patchSyntax.join("\n"));
+        let fileContent = bom.removeBom(fs.readFileSync("temp/array-formatted.json", { encoding: "utf8" }));
+
+        let jp = new JsonPatcher();
+        let response = jp.apply(fileContent.content, operation);
+
+        // Verify the output uses 4-space indentation
+        expect(response).toContain('\n    {');
+        expect(response).toContain('\n        "id"');
+
+        // Verify content is correct
+        let result = JSON.parse(response);
+        expect(result[0].name).toEqual("updated-item1");
+    });
+
+    test("preserve JSON formatting with tabs and CRLF combined", () => {
+        // Create JSON with tab indentation and CRLF line endings
+        const formattedJson = JSON.stringify(inputJson, null, "\t").replace(/\n/g, "\r\n");
+        fs.writeFileSync("temp/tab-crlf-formatted.json", formattedJson, { encoding: "utf8" });
+
+        let patchSyntax = [
+            '= /version => "4.0.0"'
+        ];
+
+        let operation = patcher.parsePatchSyntax(patchSyntax.join("\n"));
+        let fileContent = bom.removeBom(fs.readFileSync("temp/tab-crlf-formatted.json", { encoding: "utf8" }));
+
+        let jp = new JsonPatcher();
+        let response = jp.apply(fileContent.content, operation);
+
+        // Verify the output uses both tab indentation and CRLF
+        expect(response).toContain("\r\n");
+        expect(response).toContain('\t"version"');
+
+        // Verify content is correct
+        let result = JSON.parse(response);
+        expect(result.version).toEqual("4.0.0");
+    });
+
+    test("handle minified JSON with no formatting", () => {
+        // Create minified JSON (no spaces or newlines)
+        const minifiedJson = JSON.stringify(inputJson);
+        fs.writeFileSync("temp/minified.json", minifiedJson, { encoding: "utf8" });
+
+        let patchSyntax = [
+            '= /version => "5.0.0"'
+        ];
+
+        let operation = patcher.parsePatchSyntax(patchSyntax.join("\n"));
+        let fileContent = bom.removeBom(fs.readFileSync("temp/minified.json", { encoding: "utf8" }));
+
+        let jp = new JsonPatcher();
+        let response = jp.apply(fileContent.content, operation);
+
+        // Minified JSON should get default 2-space formatting
+        expect(response).toContain('\n  "version"');
+
+        // Verify content is correct
+        let result = JSON.parse(response);
+        expect(result.version).toEqual("5.0.0");
+    });
+
+    test("patchAsync should return true when files are patched", async () => {
+        let patchSyntax = [
+            '= /version => "6.0.0"'
+        ];
+
+        let jp = new JsonPatcher();
+        let result = await patcher.patchAsync(
+            jp,
+            "temp/*.json",
+            patchSyntax.join("\n"),
+            false,
+            false,
+            false
+        );
+
+        expect(result).toBe(true);
+    });
+
+    test("patchAsync should return false when no files match pattern", async () => {
+        let patchSyntax = [
+            '= /version => "7.0.0"'
+        ];
+
+        let jp = new JsonPatcher();
+        let result = await patcher.patchAsync(
+            jp,
+            "temp/*.nonexistent",
+            patchSyntax.join("\n"),
+            false,
+            false,  // Don't fail if no files patched
+            false
+        );
+
+        expect(result).toBe(false);
+    });
 });

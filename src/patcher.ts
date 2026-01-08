@@ -81,19 +81,31 @@ export async function patchAsync(
 	if (failIfNoFilesPatched && filesPatched === 0) {
 		throw new Error("No files were patched");
 	}
-	return false;
+	return filesPatched > 0;
 }
 
 export function parsePatchSyntax(patchSyntax: string): Operation[] {
 	const result: Operation[] = [];
 
-	const regex = /^\s*(?<op>\+|-|=|&|>|\?)\s*(?<path>.*?)\s*(=>\s*(?<value>.*))?$/gm;
-	const matches = patchSyntax.matchAll(regex);
+	const regex = /^\s*(?<op>\+|-|=|&|>|\?)\s*(?<path>.*?)\s*(=>\s*(?<value>.*))?$/;
+	const lines = patchSyntax.split("\n");
 
-	for (const match of matches) {
-		if (!match.groups) {
-			throw new Error(`Unable to parse patch syntax at line ${match.index}: '${match.input}'`);
+	for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+		const line = lines[lineIndex].trim();
+
+		// Skip empty lines and comments
+		if (line === "" || line.startsWith("#") || line.startsWith("//")) {
+			continue;
 		}
+
+		const match = line.match(regex);
+
+		if (!match || !match.groups) {
+			throw new Error(
+				`Unable to parse patch syntax at line ${lineIndex + 1}: '${line}'. Expected format: '<op> <path> => <value>' where op is one of +, -, =. Use # or // for comments.`,
+			);
+		}
+
 		const op = match.groups.op; // +, -, =, &, >, ?
 		const path = match.groups.path;
 		const value = match.groups.value;
