@@ -1,27 +1,31 @@
 name: 'Patch files'
-description: 'A simple action to patch JSON files'
+description: 'A simple action to patch JSON files using JSON Patch operations'
 author: 'Utkarsh Shigihalli'
 
 inputs:
   files:
-    description: 'Required. Files to scan. e.g., testfiles/**/*.json'
+    description: 'Files to scan. Supports glob patterns (e.g., testfiles/**/*.json, config/*.json)'
     required: true
   patch-syntax:
-    description: 'Required. Use the quick patch syntax to patch files. Refer readme for more info.'
+    description: 'Quick patch syntax to patch files. Uses JSON Patch operations. See documentation for syntax details and examples.'
     required: true
   output-patched-file:
-    description: 'Output patched file to the logs. Default is true'
-    default: true
+    description: 'Output patched file contents to the logs for verification'
+    required: false
+    default: 'true'
   fail-if-no-files-patched:
-    description: 'Fail if no files are patched. Default is false'
-    default: false
+    description: 'Fail the action if no files are patched by the specified pattern'
+    required: false
+    default: 'false'
   fail-if-error:
-    description: 'Set false to warn if error occurs or set true to fail the action. Default is false'
-    default: false
-  
+    description: 'Fail the action on errors. Set to false to only show warnings instead of failing the workflow.'
+    required: false
+    default: 'false'
+
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'
+
 branding:
-  icon: file-text
-  color: blue
+  icon: 'file-text'
+  color: 'blue'
