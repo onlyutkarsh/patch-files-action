@@ -3,3 +3,4 @@ pre-commit:
     package:
       run: npm run package
       stage_fixed: true
+      verbose: true
