@@ -23,7 +23,7 @@ export async function run() {
 			message = error.message;
 		}
 		else {
-			message = "Unknown error ocurred";
+			message = "Unknown error occurred";
 		}
 		core.error(message);
 		if (failIfError || failIfNoFilesPatched) {

@@ -24,7 +24,7 @@ describe("index.ts tests", () => {
     });
 
     afterEach(async () => {
-        fs.rmdirSync("temp", { recursive: true });
+        fs.rmSync("temp", { recursive: true, force: true });
 
         jest.restoreAllMocks();
     });
@@ -236,22 +236,309 @@ describe("index.ts tests", () => {
             }
         };
 
-        expect(response).toEqual(JSON.stringify(expectedResponse));
+        // Parse both to compare the actual JSON structure, not formatting
+        expect(JSON.parse(response)).toEqual(expectedResponse);
 
     });
 
-    test("add multiple elements to file", async () => {
+    test("add multiple elements to file", () => {
+        let patchSyntax = [
+            "+ /license => \"MIT\"",
+            "+ /repository => \"https://github.com/test/repo\"",
+            "+ /bugs/email => \"bugs@example.com\""
+        ];
 
+        let operation = patcher.parsePatchSyntax(patchSyntax.join("\n"));
+        let fileContent = bom.removeBom(fs.readFileSync("temp/test.json", { encoding: "utf8" }));
+
+        let jp = new JsonPatcher();
+        let response = jp.apply(fileContent.content, operation);
+        let result = JSON.parse(response);
+
+        expect(result.license).toEqual("MIT");
+        expect(result.repository).toEqual("https://github.com/test/repo");
+        expect(result.bugs.email).toEqual("bugs@example.com");
     });
 
-    test("replace multiple tokens in file", async () => {
+    test("replace multiple tokens in file", () => {
+        let patchSyntax = [
+            "= /version => \"2.0.0\"",
+            "= /author => \"Jane Doe\"",
+            "= /bugs/url => \"https://newurl.com\""
+        ];
+
+        let operation = patcher.parsePatchSyntax(patchSyntax.join("\n"));
+        let fileContent = bom.removeBom(fs.readFileSync("temp/test.json", { encoding: "utf8" }));
+
+        let jp = new JsonPatcher();
+        let response = jp.apply(fileContent.content, operation);
+        let result = JSON.parse(response);
+
+        expect(result.version).toEqual("2.0.0");
+        expect(result.author).toEqual("Jane Doe");
+        expect(result.bugs.url).toEqual("https://newurl.com");
     });
 
-    test("remove single token in file", async () => {
+    test("remove single token in file", () => {
+        let patchSyntax = [
+            "- /author"
+        ];
 
+        let operation = patcher.parsePatchSyntax(patchSyntax.join("\n"));
+        let fileContent = bom.removeBom(fs.readFileSync("temp/test.json", { encoding: "utf8" }));
+
+        let jp = new JsonPatcher();
+        let response = jp.apply(fileContent.content, operation);
+        let result = JSON.parse(response);
+
+        expect(result.author).toBeUndefined();
+        expect(result.version).toEqual("1.0.0"); // other fields should remain
     });
 
-    test("remove multiple tokens in file", async () => {
+    test("remove multiple tokens in file", () => {
+        let patchSyntax = [
+            "- /keywords",
+            "- /bugs/url"
+        ];
 
+        let operation = patcher.parsePatchSyntax(patchSyntax.join("\n"));
+        let fileContent = bom.removeBom(fs.readFileSync("temp/test.json", { encoding: "utf8" }));
+
+        let jp = new JsonPatcher();
+        let response = jp.apply(fileContent.content, operation);
+        let result = JSON.parse(response);
+
+        expect(result.keywords).toBeUndefined();
+        expect(result.bugs.url).toBeUndefined();
+        expect(result.version).toEqual("1.0.0"); // other fields should remain
+    });
+
+    test("handle array patching - add to array", () => {
+        let patchSyntax = [
+            "+ /keywords/0 => \"testing\"",
+            "+ /keywords/1 => \"github-actions\""
+        ];
+
+        let operation = patcher.parsePatchSyntax(patchSyntax.join("\n"));
+        let fileContent = bom.removeBom(fs.readFileSync("temp/test.json", { encoding: "utf8" }));
+
+        let jp = new JsonPatcher();
+        let response = jp.apply(fileContent.content, operation);
+        let result = JSON.parse(response);
+
+        expect(result.keywords).toContain("testing");
+        expect(result.keywords).toContain("github-actions");
+        expect(result.keywords.length).toEqual(2);
+    });
+
+    test("handle numeric values", () => {
+        let patchSyntax = [
+            "+ /downloads => 1000",
+            "+ /rating => 4.5"
+        ];
+
+        let operation = patcher.parsePatchSyntax(patchSyntax.join("\n"));
+        let fileContent = bom.removeBom(fs.readFileSync("temp/test.json", { encoding: "utf8" }));
+
+        let jp = new JsonPatcher();
+        let response = jp.apply(fileContent.content, operation);
+        let result = JSON.parse(response);
+
+        expect(result.downloads).toEqual(1000);
+        expect(result.rating).toEqual(4.5);
+    });
+
+    test("handle boolean values", () => {
+        let patchSyntax = [
+            "+ /private => true",
+            "+ /deprecated => false"
+        ];
+
+        let operation = patcher.parsePatchSyntax(patchSyntax.join("\n"));
+        let fileContent = bom.removeBom(fs.readFileSync("temp/test.json", { encoding: "utf8" }));
+
+        let jp = new JsonPatcher();
+        let response = jp.apply(fileContent.content, operation);
+        let result = JSON.parse(response);
+
+        expect(result.private).toEqual(true);
+        expect(result.deprecated).toEqual(false);
+    });
+
+    test("handle null values", () => {
+        let patchSyntax = [
+            "+ /homepage => null"
+        ];
+
+        let operation = patcher.parsePatchSyntax(patchSyntax.join("\n"));
+        let fileContent = bom.removeBom(fs.readFileSync("temp/test.json", { encoding: "utf8" }));
+
+        let jp = new JsonPatcher();
+        let response = jp.apply(fileContent.content, operation);
+        let result = JSON.parse(response);
+
+        expect(result.homepage).toBeNull();
+    });
+
+    test("handle object values", () => {
+        let patchSyntax = [
+            '+ /config => {"timeout": 30, "retries": 3}'
+        ];
+
+        let operation = patcher.parsePatchSyntax(patchSyntax.join("\n"));
+        let fileContent = bom.removeBom(fs.readFileSync("temp/test.json", { encoding: "utf8" }));
+
+        let jp = new JsonPatcher();
+        let response = jp.apply(fileContent.content, operation);
+        let result = JSON.parse(response);
+
+        expect(result.config).toEqual({ timeout: 30, retries: 3 });
+    });
+
+    test("handle array values", () => {
+        let patchSyntax = [
+            '= /keywords => ["test", "ci", "automation"]'
+        ];
+
+        let operation = patcher.parsePatchSyntax(patchSyntax.join("\n"));
+        let fileContent = bom.removeBom(fs.readFileSync("temp/test.json", { encoding: "utf8" }));
+
+        let jp = new JsonPatcher();
+        let response = jp.apply(fileContent.content, operation);
+        let result = JSON.parse(response);
+
+        expect(result.keywords).toEqual(["test", "ci", "automation"]);
+    });
+
+    test("handle deep nested paths", () => {
+        let patchSyntax = [
+            '+ /bugs/contact => {}',
+            '+ /bugs/contact/email => "support@example.com"',
+            '+ /bugs/contact/phone => "+1234567890"'
+        ];
+
+        let operation = patcher.parsePatchSyntax(patchSyntax.join("\n"));
+        let fileContent = bom.removeBom(fs.readFileSync("temp/test.json", { encoding: "utf8" }));
+
+        let jp = new JsonPatcher();
+        let response = jp.apply(fileContent.content, operation);
+        let result = JSON.parse(response);
+
+        expect(result.bugs.contact.email).toEqual("support@example.com");
+        expect(result.bugs.contact.phone).toEqual("+1234567890");
+    });
+
+    test("handle BOM preservation", () => {
+        const contentWithBOM = "\uFEFF" + JSON.stringify(inputJson);
+        fs.writeFileSync("temp/bom-test.json", contentWithBOM, { encoding: "utf8" });
+
+        let patchSyntax = [
+            '= /version => "2.0.0"'
+        ];
+
+        let operation = patcher.parsePatchSyntax(patchSyntax.join("\n"));
+        let fileContent = bom.removeBom(fs.readFileSync("temp/bom-test.json", { encoding: "utf8" }));
+
+        expect(fileContent.hadBOM).toBe(true);
+
+        let jp = new JsonPatcher();
+        fileContent.content = jp.apply(fileContent.content, operation);
+
+        let restoredContent = bom.restoreBom(fileContent);
+        expect(restoredContent).toMatch(/^\uFEFF/);
+    });
+
+    test("mixed operations - add, replace, remove", () => {
+        let patchSyntax = [
+            '= /version => "3.0.0"',
+            '+ /license => "Apache-2.0"',
+            '- /keywords',
+            '= /bugs/url => "https://issues.example.com"',
+            '+ /bugs/type => "github"'
+        ];
+
+        let operation = patcher.parsePatchSyntax(patchSyntax.join("\n"));
+        let fileContent = bom.removeBom(fs.readFileSync("temp/test.json", { encoding: "utf8" }));
+
+        let jp = new JsonPatcher();
+        let response = jp.apply(fileContent.content, operation);
+        let result = JSON.parse(response);
+
+        expect(result.version).toEqual("3.0.0");
+        expect(result.license).toEqual("Apache-2.0");
+        expect(result.keywords).toBeUndefined();
+        expect(result.bugs.url).toEqual("https://issues.example.com");
+        expect(result.bugs.type).toEqual("github");
+    });
+
+    test("patch syntax with leading/trailing whitespace should be trimmed", () => {
+        let patchSyntax = [
+            "  = /version => \"1.0.1\"  ",
+            "   + /author => \"Test\"   "
+        ];
+
+        let operation = patcher.parsePatchSyntax(patchSyntax.join("\n"));
+
+        expect(operation.length).toEqual(2);
+        expect(operation[0].op).toEqual("replace");
+        expect(operation[1].op).toEqual("add");
+    });
+
+    test("stringify function should correctly format operations", () => {
+        let addOp = { op: "add" as const, path: "/test", value: "value" };
+        let removeOp = { op: "remove" as const, path: "/test" };
+        let replaceOp = { op: "replace" as const, path: "/test", value: "newvalue" };
+
+        expect(patcher.stringify(addOp)).toEqual('+ /test => "value"');
+        expect(patcher.stringify(removeOp)).toEqual('- /test');
+        expect(patcher.stringify(replaceOp)).toEqual('= /test => "newvalue"');
+    });
+
+    test("preserve JSON formatting with proper indentation", () => {
+        // Create a properly formatted JSON file with 2-space indentation
+        const formattedJson = JSON.stringify(inputJson, null, 2);
+        fs.writeFileSync("temp/formatted.json", formattedJson, { encoding: "utf8" });
+
+        let patchSyntax = [
+            '= /version => "2.0.0"'
+        ];
+
+        let operation = patcher.parsePatchSyntax(patchSyntax.join("\n"));
+        let fileContent = bom.removeBom(fs.readFileSync("temp/formatted.json", { encoding: "utf8" }));
+
+        let jp = new JsonPatcher();
+        let response = jp.apply(fileContent.content, operation);
+
+        // Verify the output is properly formatted
+        expect(response).toContain('\n  "version"');
+        expect(response).toContain('\n  "keywords"');
+
+        // Verify content is correct
+        let result = JSON.parse(response);
+        expect(result.version).toEqual("2.0.0");
+    });
+
+    test("preserve JSON formatting with 4-space indentation", () => {
+        // Create a properly formatted JSON file with 4-space indentation
+        const formattedJson = JSON.stringify(inputJson, null, 4);
+        fs.writeFileSync("temp/formatted4.json", formattedJson, { encoding: "utf8" });
+
+        let patchSyntax = [
+            '= /version => "3.0.0"'
+        ];
+
+        let operation = patcher.parsePatchSyntax(patchSyntax.join("\n"));
+        let fileContent = bom.removeBom(fs.readFileSync("temp/formatted4.json", { encoding: "utf8" }));
+
+        let jp = new JsonPatcher();
+        let response = jp.apply(fileContent.content, operation);
+
+        // Verify the output uses 4-space indentation
+        expect(response).toContain('\n    "version"');
+        expect(response).toContain('\n    "keywords"');
+
+        // Verify content is correct
+        let result = JSON.parse(response);
+        expect(result.version).toEqual("3.0.0");
     });
 });
