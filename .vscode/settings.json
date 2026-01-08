@@ -12,5 +12,8 @@
   },
   "problems.showCurrentInStatus": true,
   "git.enableCommitSigning": true,
-  "editor.wordWrap": "on"
+  "editor.wordWrap": "on",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.biome": "explicit"
+  }
 }

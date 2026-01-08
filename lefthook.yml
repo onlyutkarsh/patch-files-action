@@ -1,0 +1,5 @@
+pre-commit:
+  commands:
+    package:
+      run: npm run package
+      stage_fixed: true

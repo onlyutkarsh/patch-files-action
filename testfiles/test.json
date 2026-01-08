@@ -1,9 +1,9 @@
 {
-    "version": "1.0.0",
-    "keywords": [],
-    "author": "onlyutkarsh",
-    "bugs": {
-        "url": "http://www.dummy.com",
-        "name": "test"
-    }
+	"version": "1.0.0",
+	"keywords": [],
+	"author": "onlyutkarsh",
+	"bugs": {
+		"url": "http://www.dummy.com",
+		"name": "test"
+	}
 }
