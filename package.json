@@ -1,6 +1,6 @@
 {
 	"name": "token-replacement-action",
-	"version": "1.0.6",
+	"version": "1.0.7",
 	"description": "A simple utility action to replace tokens in files",
 	"main": "dist/index.js",
 	"scripts": {
