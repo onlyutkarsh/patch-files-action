@@ -229,7 +229,7 @@ describe("YamlPatcher tests", () => {
     expect(result.keywords).toEqual(["test", "ci", "automation"]);
   });
 
-  test("handle deep nested paths in YAML", () => {
+  test("handle deep nested paths - create and populate nested objects", () => {
     const patchSyntax = [
       "+ /bugs/contact => {}",
       '+ /bugs/contact/email => "support@example.com"',
@@ -420,5 +420,37 @@ bugs:
 
     expect(configContent.version).toEqual("2.0.0");
     expect(valuesContent.version).toEqual("2.0.0");
+  });
+
+  test("validate full path requirement - partial paths should fail", () => {
+    // Verifies that paths must include complete hierarchy from root
+    const k8sYaml = {
+      apiVersion: "v1",
+      kind: "Deployment",
+      spec: {
+        replicas: 1,
+        image: {
+          tag: "latest",
+        },
+      },
+    };
+
+    fs.writeFileSync("temp/path-validation.yaml", yaml.dump(k8sYaml), {
+      encoding: "utf8",
+    });
+
+    const fileContent = bom.removeBom(
+      fs.readFileSync("temp/path-validation.yaml", {encoding: "utf8"})
+    );
+    const yp = new YamlPatcher();
+
+    // Correct: Full path from root (/spec/image/tag) works
+    const correctOperation = patcher.parsePatchSyntax('= /spec/image/tag => "v1.2.3"');
+    const correctResult = yaml.load(yp.apply(fileContent.content, correctOperation)) as any;
+    expect(correctResult.spec.image.tag).toEqual("v1.2.3");
+
+    // Incorrect: Partial path (/image/tag) fails because /image doesn't exist at root
+    const wrongOperation = patcher.parsePatchSyntax('= /image/tag => "v1.2.3"');
+    expect(() => yp.apply(fileContent.content, wrongOperation)).toThrow();
   });
 });

@@ -123,8 +123,10 @@ Patch Kubernetes or CI/CD configuration files:
       config/*.yaml
       .github/workflows/*.yml
     patch-syntax: |
-      = /image/tag => "${{ github.sha }}"
-      = /replicas => 3
+      # Use full path from root: /spec/image/tag (not /image/tag)
+      = /spec/image/tag => "${{ github.sha }}"
+      = /spec/replicas => 3
+      + /metadata/annotations => {}
       + /metadata/annotations/deployment-time => "${{ github.event.head_commit.timestamp }}"
 ```
 
@@ -351,6 +353,27 @@ Under the hood, this action uses JSON Patch (RFC 6902). The simple syntax is con
 
 ❌ Wrong: `= version => "1.0.0"`
 ✅ Correct: `= /version => "1.0.0"`
+
+### Nested paths must include full hierarchy
+
+Paths must follow the complete hierarchy from the document root.
+
+❌ Wrong: `= /image/tag => "v1.2.3"` (when `image` is nested under `spec`)
+✅ Correct: `= /spec/image/tag => "v1.2.3"`
+
+**Example:**
+```yaml
+# Given this structure:
+spec:
+  replicas: 1
+  image:
+    tag: latest
+
+# Use the full path from root:
+= /spec/image/tag => "v1.2.3"
+
+# NOT just /image/tag
+```
 
 ### Invalid JSON value
 
