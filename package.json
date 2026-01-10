@@ -1,7 +1,7 @@
 {
-	"name": "token-replacement-action",
+	"name": "patch-files-action",
 	"version": "1.0.7",
-	"description": "A simple utility action to replace tokens in files",
+	"description": "A simple utility action to patch JSON and YAML files",
 	"main": "dist/index.js",
 	"scripts": {
 		"build": "tsc",
@@ -12,7 +12,9 @@
 		"lint": "biome check .",
 		"lint:fix": "biome check --write .",
 		"format": "biome format --write .",
-		"prepare": "lefthook install"
+		"prepare": "lefthook install",
+		"hook": "lefthook run pre-commit",
+		"hook:all": "lefthook run --all-files pre-commit"
 	},
 	"repository": {
 		"type": "git",
@@ -27,8 +29,10 @@
 	"homepage": "https://github.com/onlyutkarsh/patch-files-action#readme",
 	"dependencies": {
 		"@actions/core": "^2.0.2",
-		"@actions/glob": "^0.5.0",
-		"fast-json-patch": "^3.1.1"
+		"fast-glob": "^3.3.3",
+		"@types/js-yaml": "^4.0.9",
+		"fast-json-patch": "^3.1.1",
+		"js-yaml": "^4.1.1"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.3.11",

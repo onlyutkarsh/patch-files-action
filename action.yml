@@ -1,13 +1,13 @@
 name: 'Patch files'
-description: 'A simple action to patch JSON files using JSON Patch operations'
+description: 'A simple action to patch JSON and YAML files using JSON Patch operations'
 author: 'Utkarsh Shigihalli'
 
 inputs:
   files:
-    description: 'Files to scan. Supports glob patterns (e.g., testfiles/**/*.json, config/*.json)'
+    description: 'Files to scan. Supports glob patterns (e.g., testfiles/**/*.json, config/*.yaml, **/*.yml)'
     required: true
   patch-syntax:
-    description: 'Quick patch syntax to patch files. Uses JSON Patch operations. See documentation for syntax details and examples.'
+    description: 'Quick patch syntax to patch files. Uses JSON Patch operations. Works with both JSON and YAML files. See documentation for syntax details and examples.'
     required: true
   output-patched-file:
     description: 'Output patched file contents to the logs for verification'
@@ -23,7 +23,7 @@ inputs:
     default: 'false'
 
 runs:
-  using: 'node24'
+  using: 'node20'
   main: 'dist/index.js'
 
 branding:

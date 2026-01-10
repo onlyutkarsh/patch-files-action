@@ -44,9 +44,102 @@ describe("index.ts tests", () => {
     test("find matching files in a directory should return one file", async () => {
         let pattern = ["temp/*.json"];
         let files = pattern.join("\n");
-        let globber = await patcher.globFilesAsync(files);
-        let paths = await globber.glob();
+        let paths = await patcher.globFilesAsync(files);
         expect(paths.length).toEqual(1);
+    });
+
+    test("find matching files with multiple patterns should work", async () => {
+        // Create additional test files
+        fs.writeFileSync("temp/test2.json", JSON.stringify(inputJson));
+        fs.writeFileSync("temp/test.txt", "not a json file");
+
+        let patterns = ["temp/*.json", "temp/*.txt"];
+        let files = patterns.join("\n");
+        let paths = await patcher.globFilesAsync(files);
+
+        // Should find 2 json files and 1 txt file
+        expect(paths.length).toEqual(3);
+        expect(paths.some(p => p.includes("test.json"))).toBe(true);
+        expect(paths.some(p => p.includes("test2.json"))).toBe(true);
+        expect(paths.some(p => p.includes("test.txt"))).toBe(true);
+    });
+
+    test("find matching files should ignore empty lines in pattern", async () => {
+        let patterns = ["temp/*.json", "", "  ", "\n"];
+        let files = patterns.join("\n");
+        let paths = await patcher.globFilesAsync(files);
+
+        // Should only find the json file, ignoring empty patterns
+        expect(paths.length).toEqual(1);
+    });
+
+    test("directory pattern without wildcards should match all files recursively", async () => {
+        // Create nested directory structure
+        fs.mkdirSync("temp/subdir", { recursive: true });
+        fs.writeFileSync("temp/subdir/nested.json", JSON.stringify(inputJson));
+        fs.writeFileSync("temp/subdir/nested2.json", JSON.stringify(inputJson));
+
+        // Test directory pattern without trailing slash
+        let paths = await patcher.globFilesAsync("temp");
+        expect(paths.length).toBeGreaterThanOrEqual(3); // At least test.json, nested.json, nested2.json
+
+        // Test directory pattern with trailing slash
+        let paths2 = await patcher.globFilesAsync("temp/");
+        expect(paths2.length).toBeGreaterThanOrEqual(3);
+
+        // Test subdirectory pattern
+        let paths3 = await patcher.globFilesAsync("temp/subdir");
+        expect(paths3.length).toEqual(2); // nested.json, nested2.json
+    });
+
+    test("directory pattern should work with patchAsync", async () => {
+        // Create nested structure
+        fs.mkdirSync("temp/config", { recursive: true });
+        fs.writeFileSync("temp/config/app.json", JSON.stringify(inputJson));
+        fs.writeFileSync("temp/config/settings.json", JSON.stringify(inputJson));
+
+        let patchSyntax = ['= /version => "2.0.0"'];
+
+        let result = await patcher.patchAsync(
+            "temp/config", // Directory pattern without wildcards
+            patchSyntax.join("\n"),
+            false,
+            false,
+            false
+        );
+
+        expect(result).toBe(true);
+
+        // Verify both files were patched
+        let appContent = JSON.parse(fs.readFileSync("temp/config/app.json", { encoding: "utf8" }));
+        let settingsContent = JSON.parse(fs.readFileSync("temp/config/settings.json", { encoding: "utf8" }));
+        expect(appContent.version).toEqual("2.0.0");
+        expect(settingsContent.version).toEqual("2.0.0");
+    });
+
+    test("single file pattern should work (most common use case)", async () => {
+        // Test exact file path without glob characters
+        let paths = await patcher.globFilesAsync("temp/test.json");
+        expect(paths.length).toEqual(1);
+        expect(paths[0]).toContain("test.json");
+    });
+
+    test("single file pattern should work with patchAsync", async () => {
+        let patchSyntax = ['= /version => "5.0.0"'];
+
+        let result = await patcher.patchAsync(
+            "temp/test.json", // Single file - most common use case
+            patchSyntax.join("\n"),
+            false,
+            false,
+            false
+        );
+
+        expect(result).toBe(true);
+
+        // Verify file was patched
+        let content = JSON.parse(fs.readFileSync("temp/test.json", { encoding: "utf8" }));
+        expect(content.version).toEqual("5.0.0");
     });
 
     test("parse patch syntax and validate its json-patch compatible", async () => {
@@ -764,9 +857,7 @@ describe("index.ts tests", () => {
             '= /version => "6.0.0"'
         ];
 
-        let jp = new JsonPatcher();
         let result = await patcher.patchAsync(
-            jp,
             "temp/*.json",
             patchSyntax.join("\n"),
             false,
@@ -782,16 +873,166 @@ describe("index.ts tests", () => {
             '= /version => "7.0.0"'
         ];
 
-        let jp = new JsonPatcher();
         let result = await patcher.patchAsync(
-            jp,
             "temp/*.nonexistent",
             patchSyntax.join("\n"),
             false,
             false,  // Don't fail if no files patched
-            false
+            false   // Don't fail if error
         );
 
         expect(result).toBe(false);
+    });
+
+    test("README example: create nested object with repository/url", () => {
+        // Test the exact example from README
+        let patchSyntax = [
+            '= /version => "1.2.3"',
+            '+ /buildNumber => 42',
+            '+ /repository => {}',
+            '+ /repository/url => "https://github.com/owner/repo"'
+        ];
+
+        // Start with minimal package.json
+        let minimalJson = {
+            "version": "1.0.0",
+            "name": "my-package"
+        };
+
+        fs.writeFileSync("temp/readme-example.json", JSON.stringify(minimalJson));
+
+        let operation = patcher.parsePatchSyntax(patchSyntax.join("\n"));
+        let fileContent = bom.removeBom(fs.readFileSync("temp/readme-example.json", { encoding: "utf8" }));
+
+        let jp = new JsonPatcher();
+        let response = jp.apply(fileContent.content, operation);
+        let result = JSON.parse(response);
+
+        // Verify all changes from README example
+        expect(result.version).toEqual("1.2.3");
+        expect(result.name).toEqual("my-package");
+        expect(result.buildNumber).toEqual(42);
+        expect(result.repository).toBeDefined();
+        expect(result.repository.url).toEqual("https://github.com/owner/repo");
+    });
+
+    test("should fail when using = (replace) on non-existent nested path", () => {
+        // Demonstrate why using = /repository/url fails when /repository doesn't exist
+        let patchSyntax = [
+            '= /version => "1.2.3"',
+            '+ /buildNumber => 42',
+            '= /repository/url => "https://github.com/owner/repo"'  // This will fail - /repository doesn't exist
+        ];
+
+        // Start with minimal package.json (no repository field)
+        let minimalJson = {
+            "version": "1.0.0",
+            "name": "my-package"
+        };
+
+        fs.writeFileSync("temp/replace-fail.json", JSON.stringify(minimalJson));
+
+        let operation = patcher.parsePatchSyntax(patchSyntax.join("\n"));
+        let fileContent = bom.removeBom(fs.readFileSync("temp/replace-fail.json", { encoding: "utf8" }));
+
+        let jp = new JsonPatcher();
+
+        // This should throw an error because /repository doesn't exist
+        expect(() => {
+            jp.apply(fileContent.content, operation);
+        }).toThrow();
+    });
+
+    test("= (replace) can only update existing fields, not add new ones", () => {
+        // Demonstrate that = only works to replace existing values, even with parent present
+        // For adding new fields, always use +
+        let minimalJson = {
+            "version": "1.0.0",
+            "name": "my-package",
+            "repository": {
+                "url": "https://github.com/old/repo"  // Existing field
+            }
+        };
+
+        fs.writeFileSync("temp/replace-existing.json", JSON.stringify(minimalJson));
+
+        // Test 1: Replace existing nested field works
+        let patchSyntax1 = [
+            '= /repository/url => "https://github.com/new/repo"'  // This works - field exists
+        ];
+
+        let operation1 = patcher.parsePatchSyntax(patchSyntax1.join("\n"));
+        let fileContent1 = bom.removeBom(fs.readFileSync("temp/replace-existing.json", { encoding: "utf8" }));
+
+        let jp = new JsonPatcher();
+        let response1 = jp.apply(fileContent1.content, operation1);
+        let result1 = JSON.parse(response1);
+
+        expect(result1.repository.url).toEqual("https://github.com/new/repo");
+
+        // Test 2: Replace non-existent nested field fails
+        let patchSyntax2 = [
+            '= /repository/type => "github"'  // This fails - field doesn't exist
+        ];
+
+        let operation2 = patcher.parsePatchSyntax(patchSyntax2.join("\n"));
+        let fileContent2 = bom.removeBom(fs.readFileSync("temp/replace-existing.json", { encoding: "utf8" }));
+
+        // This should throw because the field doesn't exist
+        expect(() => {
+            jp.apply(fileContent2.content, operation2);
+        }).toThrow();
+    });
+
+    test("README example: add keywords using array indices", () => {
+        // Test the exact array syntax from README
+        let patchSyntax = [
+            '+ /keywords/0 => "github-actions"',
+            '+ /keywords/1 => "automation"',
+            '+ /keywords/2 => "ci-cd"'
+        ];
+
+        // Start with package.json that has empty keywords array
+        let packageJson = {
+            "version": "1.0.0",
+            "name": "my-package",
+            "keywords": []
+        };
+
+        fs.writeFileSync("temp/array-example.json", JSON.stringify(packageJson));
+
+        let operation = patcher.parsePatchSyntax(patchSyntax.join("\n"));
+        let fileContent = bom.removeBom(fs.readFileSync("temp/array-example.json", { encoding: "utf8" }));
+
+        let jp = new JsonPatcher();
+        let response = jp.apply(fileContent.content, operation);
+        let result = JSON.parse(response);
+
+        // Verify all keywords were added in order
+        expect(result.keywords).toEqual(["github-actions", "automation", "ci-cd"]);
+        expect(result.keywords.length).toEqual(3);
+    });
+
+    test("patchAsync should handle uppercase JSON extensions", async () => {
+        // Create JSON files with uppercase extensions
+        fs.writeFileSync("temp/CONFIG.JSON", JSON.stringify(inputJson));
+
+        let patchSyntax = [
+            '= /version => "3.0.0"'
+        ];
+
+        let result = await patcher.patchAsync(
+            "temp/*.JSON",
+            patchSyntax.join("\n"),
+            false,
+            false,
+            false
+        );
+
+        expect(result).toBe(true);
+
+        // Verify file was patched
+        let configContent = JSON.parse(fs.readFileSync("temp/CONFIG.JSON", { encoding: "utf8" }));
+        expect(configContent.version).toEqual("3.0.0");
     });
 });

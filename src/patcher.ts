@@ -1,9 +1,11 @@
 import * as fs from "node:fs";
 import * as core from "@actions/core";
-import * as glob from "@actions/glob";
+import fg from "fast-glob";
 import type * as fjp from "fast-json-patch";
 import type { Operation } from "fast-json-patch";
 import * as bom from "../src/bom";
+import { JsonPatcher } from "./JsonPatcher";
+import { YamlPatcher } from "./YamlPatcher";
 
 export interface IPatcher {
 	apply(content: string, patchSyntax: fjp.Operation[]): string;
@@ -16,13 +18,43 @@ export interface IPatch {
 	from?: string;
 }
 
-export async function globFilesAsync(patterns: string, followSymbolicLinks = "true"): Promise<glob.Globber> {
+export async function globFilesAsync(patterns: string, followSymbolicLinks = "true"): Promise<string[]> {
 	const globOptions = {
 		followSymbolicLinks: followSymbolicLinks.toUpperCase() !== "FALSE",
+		// Match @actions/glob behavior: case-insensitive on Windows, case-sensitive on Unix
+		caseSensitiveMatch: process.platform !== "win32",
 	};
 
-	const globber = await glob.create(patterns, globOptions);
-	return globber;
+	// Split newline-separated patterns and filter out empty lines
+	const patternArray = patterns
+		.split("\n")
+		.map((p) => p.trim())
+		.filter((p) => p.length > 0)
+		.map((p) => {
+			// Match @actions/glob behavior: if pattern is a directory (no glob characters),
+			// append /** to match all descendants
+			const hasGlobChars = /[*?[\]{}!]/.test(p);
+			if (!hasGlobChars) {
+				// Only expand if it's explicitly a directory (ends with /) or is an actual directory
+				if (p.endsWith("/")) {
+					return `${p}**`;
+				}
+				// Check if path exists and is a directory
+				try {
+					const stat = fs.statSync(p);
+					if (stat.isDirectory()) {
+						return `${p}/**`;
+					}
+				} catch {
+					// Path doesn't exist or not accessible - treat as literal file pattern
+					// This allows patterns like "package.json" or "src/config.json" to work
+				}
+			}
+			return p;
+		});
+
+	const files = await fg(patternArray, globOptions);
+	return files;
 }
 
 export function stringify(operation: Operation): string {
@@ -45,7 +77,6 @@ export function stringify(operation: Operation): string {
 }
 
 export async function patchAsync(
-	patcher: IPatcher,
 	filePattern: string,
 	patchSyntax: string,
 	outputPatchedFile: boolean,
@@ -53,14 +84,23 @@ export async function patchAsync(
 	_failIfError: boolean,
 	followSymbolicLinks = "true",
 ): Promise<boolean> {
-	const globber = await globFilesAsync(filePattern, followSymbolicLinks);
+	const files = await globFilesAsync(filePattern, followSymbolicLinks);
 
 	const patches = parsePatchSyntax(patchSyntax);
 
+	// Create patcher instances
+	const jsonPatcher = new JsonPatcher();
+	const yamlPatcher = new YamlPatcher();
+
 	let filesPatched = 0;
-	for await (const file of globber.globGenerator()) {
+	for (const file of files) {
 		core.info(`Patching file ${file}`);
 		const fileContent = bom.removeBom(fs.readFileSync(file, { encoding: "utf8" }));
+
+		// Determine which patcher to use based on file extension (case-insensitive)
+		const lowerFile = file.toLowerCase();
+		const isYamlFile = lowerFile.endsWith(".yml") || lowerFile.endsWith(".yaml");
+		const patcher = isYamlFile ? yamlPatcher : jsonPatcher;
 
 		try {
 			fileContent.content = patcher.apply(fileContent.content, patches);

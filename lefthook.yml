@@ -1,6 +1,8 @@
 pre-commit:
-  commands:
-    package:
+  jobs:
+    - name: lint
+      run: npm run lint:fix
+      stage_fixed: true # Ensure linting runs before other jobs
+
+    - name: package
       run: npm run package
-      stage_fixed: true
-      verbose: true

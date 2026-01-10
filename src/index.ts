@@ -1,5 +1,4 @@
 import * as core from "@actions/core";
-import { JsonPatcher } from "./JsonPatcher";
 import * as patcher from "./patcher";
 
 export async function run() {
@@ -15,9 +14,7 @@ export async function run() {
 		failIfError = core.getInput("fail-if-error") === "true";
 		failIfNoFilesPatched = core.getInput("fail-if-no-files-patched") === "true";
 
-		const jsonPatcher = new JsonPatcher();
-
-		await patcher.patchAsync(jsonPatcher, files, patchSyntax, outputPatchedFile, failIfNoFilesPatched, failIfError);
+		await patcher.patchAsync(files, patchSyntax, outputPatchedFile, failIfNoFilesPatched, failIfError);
 	} catch (error) {
 		let message = "";
 		if (error instanceof Error) {
